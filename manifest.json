@@ -1,8 +1,8 @@
 {
-  "name": "Field Material App",
-  "short_name": "Field Materials Tracking",
+  "name": "Field Material Management App",
+  "short_name": "Mat App",
   "description": "Field Material Management App - Track materials offline",
-  "start_url": "./",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f5f7fa",
   "theme_color": "#1976d2",
