@@ -1,58 +1,54 @@
-// sw.js — Service Worker for Field Material App 🚧
-
-const CACHE_NAME = "field-material-cache-v1";
-const FILES_TO_CACHE = [
-  "./",
-  "./index.html",
-  "./manifest.json",
-  "./icon-192.png",
-  "./icon-512.png",
-  "./sw.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+const CACHE_NAME = 'material-app-v1';
+// List of files to cache
+const urlsToCache = [
+  './', // Caches the index.html
+  'index.html',
+  'manifest.json',
+  'sw.js',
+  'icon-192.png', // The icon you referenced in the HTML
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js' // External library
 ];
 
-// ✅ Install event — caches all files
-self.addEventListener("install", (event) => {
+self.addEventListener('install', (event) => {
+  // Perform install steps
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(FILES_TO_CACHE);
-    })
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('Opened cache, pre-caching assets');
+        return cache.addAll(urlsToCache);
+      })
+      .catch((error) => {
+        console.error('Failed to pre-cache assets:', error);
+      })
   );
-  self.skipWaiting();
 });
 
-// ✅ Activate event — removes old caches
-self.addEventListener("activate", (event) => {
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        // Cache hit - return response
+        if (response) {
+          return response;
+        }
+        // No cache match, fetch from network
+        return fetch(event.request);
+      })
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            // Delete old caches
+            return caches.delete(cacheName);
           }
         })
-      )
-    )
-  );
-  self.clients.claim();
-});
-
-// ✅ Fetch event — serves files from cache when offline
-self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((networkResponse) => {
-        return caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, networkResponse.clone());
-          return networkResponse;
-        });
-      });
-    }).catch(() => {
-      // Optional: show fallback page or message if offline
-      return caches.match("./index.html");
+      );
     })
   );
 });
